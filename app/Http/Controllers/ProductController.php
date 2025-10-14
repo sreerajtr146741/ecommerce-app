@@ -4,7 +4,6 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-
 class ProductController extends Controller
 {
     // Remove this entire __construct() block:
