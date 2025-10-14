@@ -84,6 +84,5 @@ header("Refresh:2; url=login.php"); // 👈 Redirect after 2 seconds
     <div class="loader"></div>
     <p>You are being redirected to the login page.</p>
 </div>
-
 </body>
 </html>

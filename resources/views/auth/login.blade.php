@@ -117,6 +117,5 @@
     </form>
     <p>Don't have an account? <a href="{{ url('/register') }}">Register here</a></p>
 </div>
-
 </body>
 </html>
