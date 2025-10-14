@@ -6,7 +6,8 @@ use App\Http\Controllers\Api\ProductController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+//middleware setup
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('products', ProductController::class);
-} );
+});
