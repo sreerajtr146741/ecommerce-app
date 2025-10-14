@@ -22,4 +22,4 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Product routes (only accessible to authenticated users)
 Route::middleware('auth')->group(function () {
     Route::resource('products', ProductController::class);
-});
+ });
