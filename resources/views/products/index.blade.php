@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products Page</title>
     <style>
+        
+    /* Your existing CSS */
+
+    /* Remove Laravel pagination arrow icons */
+    .pagination svg {
+        display: none !important;
+    }
+
+
         body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #333; }
@@ -44,6 +53,21 @@
         <div class="success">{{ session('success') }}</div>
     @endif
 
+    <!-- Search & filter -->
+    <form method="GET" action="{{ route('products.index') }}" style="margin-bottom: 16px; display:flex; gap:8px; align-items:center;">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search products..." style="flex:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
+        <select name="category" style="padding:8px; border-radius:6px; border:1px solid #ccc;">
+            <option value="">All Categories</option>
+            @if(!empty($categories))
+                @foreach($categories as $cat)
+                    <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                @endforeach
+            @endif
+        </select>
+        <button type="submit" class="btn btn-add">Search</button>
+        <a href="{{ route('products.index') }}" class="btn" style="background:#6c757d;">Clear</a>
+    </form>
+
     @foreach($products as $product)
         <div class="product-item">
             <div class="product-info">
@@ -62,6 +86,15 @@
             </div>
         </div>
     @endforeach
+    <style>
+/* Your existing CSS */
+
+    /* Remove Laravel pagination arrow icons */
+    .pagination svg {
+        display: none !important;
+    }</style>
+    
+    </div>
 </div>
 </body>
 </html>

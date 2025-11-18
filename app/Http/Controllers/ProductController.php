@@ -30,20 +30,29 @@ class ProductController extends Controller
             }
         }
 
+        // Build query with optional search and category filters
         $query = Product::query();
+
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
         }
+
         if ($request->filled('category')) {
-            $query->where('category', $request->category);
+            $query->where('category', $request->input('category'));
         }
 
-        $products = $query->paginate(10);
-        return view('products.index', compact('products'));
+        // Paginate results; keep query string for pagination links
+        $perPage = 10;
+        $products = $query->orderBy('id', 'desc')->paginate($perPage)->withQueryString();
+
+        // List of categories for filter dropdown
+        $categories = Product::select('category')->distinct()->pluck('category')->filter()->values();
+
+        return view('products.index', compact('products', 'categories'));
     }
 
     public function create()
