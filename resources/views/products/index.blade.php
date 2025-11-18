@@ -86,6 +86,8 @@
             </div>
         </div>
     @endforeach
+    <img src="data:image/svg+xml;base64,PHN2Zy..." alt="icon">
+
     <style>
 /* Your existing CSS */
 
