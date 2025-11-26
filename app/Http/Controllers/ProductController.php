@@ -4,34 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Exception;
 
 class ProductController extends Controller
 {
+    /**
+     * Display a listing of the user's products with search & category filter
+     */
     public function index()
     {
-        try {
-            $apiProducts = Http::timeout(10)->get('https://fakestoreapi.com/products')->json();
+        $query = Product::where('user_id', auth()->id());
 
-            $myProducts = Product::where('user_id', auth()->id())
-                ->latest()
-                ->get();
-
-            return view('products.index', [
-                'apiProducts' => collect($apiProducts ?? []),
-                'myProducts'  => $myProducts,
-            ]);
-
-        } catch (Exception $e) {
-            Log::error('Failed to load products page: ' . $e->getMessage());
-
-            return view('products.index', [
-                'apiProducts' => collect([]),
-                'myProducts'  => collect([]),
-            ])->with('error', 'Unable to load products. Please try again later.');
+        // Search by name or description
+        if ($search = request('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
         }
+
+        // Filter by category
+        if ($category = request('category')) {
+            $query->where('category', $category);
+        }
+
+        $myProducts = $query->latest()->get();
+
+        return view('products.index', compact('myProducts'));
     }
 
     public function create()
@@ -46,14 +47,18 @@ class ProductController extends Controller
                 'name'        => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
                 'price'       => 'required|numeric|min:0.01',
+                'category'    => 'nullable|string|max:100',
+                'image'       => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
             ]);
 
-            Product::create([
-                'user_id'     => auth()->id(),
-                'name'        => $request->name,
-                'description' => $request->description,
-                'price'       => $request->price,
-            ]);
+            $data = $request->only(['name', 'description', 'price', 'category']);
+            $data['user_id'] = auth()->id();
+
+            if ($request->hasFile('image')) {
+                $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            Product::create($data);
 
             return redirect()
                 ->route('products.index')
@@ -63,26 +68,17 @@ class ProductController extends Controller
             return back()->withErrors($e->validator)->withInput();
         } catch (Exception $e) {
             Log::error('Product creation failed: ' . $e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to add product. Please try again.');
+            return back()->withInput()->with('error', 'Failed to add product.');
         }
     }
 
     public function edit(Product $product)
     {
-        try {
-            if ($product->user_id !== auth()->id()) {
-                abort(403, 'Unauthorized action.');
-            }
-
-            return view('products.edit', compact('product'));
-
-        } catch (Exception $e) {
-            Log::error('Edit product access failed: ' . $e->getMessage());
-            abort(404);
+        if ($product->user_id !== auth()->id()) {
+            abort(403);
         }
+
+        return view('products.edit', compact('product'));
     }
 
     public function update(Request $request, Product $product)
@@ -96,13 +92,21 @@ class ProductController extends Controller
                 'name'        => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
                 'price'       => 'required|numeric|min:0.01',
+                'category'    => 'nullable|string|max:100',
+                'image'       => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
             ]);
 
-            $product->update([
-                'name'        => $request->name,
-                'description' => $request->description,
-                'price'       => $request->price,
-            ]);
+            $data = $request->only(['name', 'description', 'price', 'category']);
+
+            if ($request->hasFile('image')) {
+                // Delete old image
+                if ($product->image) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            $product->update($data);
 
             return redirect()
                 ->route('products.index')
@@ -112,10 +116,7 @@ class ProductController extends Controller
             return back()->withErrors($e->validator)->withInput();
         } catch (Exception $e) {
             Log::error('Product update failed: ' . $e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to update product. Please try again.');
+            return back()->withInput()->with('error', 'Update failed. Try again.');
         }
     }
 
@@ -123,7 +124,12 @@ class ProductController extends Controller
     {
         try {
             if ($product->user_id !== auth()->id()) {
-                abort(403, 'Unauthorized deletion.');
+                abort(403);
+            }
+
+            // Delete image if exists
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
             }
 
             $product->delete();
@@ -134,8 +140,7 @@ class ProductController extends Controller
 
         } catch (Exception $e) {
             Log::error('Product deletion failed: ' . $e->getMessage());
-
-            return back()->with('error', 'Failed to delete product. Try again.');
+            return back()->with('error', 'Failed to delete product.');
         }
     }
 }

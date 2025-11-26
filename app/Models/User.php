@@ -6,16 +6,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;          // ← THIS LINE IS MISSING IN YOUR PROJECT
+use Laravel\Sanctum\HasApiTokens;       
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;   // ← ADD HasApiTokens HERE
+    use HasFactory, Notifiable, HasApiTokens;   //HasApiTokens HERE
 
     protected $fillable = [
         'name',
         'email',
         'password',
+        'profile_photo'
     ];
 
     protected $hidden = [
