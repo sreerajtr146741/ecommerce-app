@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 
 // Public routes
 // Route::get('/login', [AuthController::class, 'showLogin']);
@@ -26,10 +27,19 @@ Route::middleware('auth')->group(function () {
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 });
+// Public product detail route
+Route::get('/products/{product}', [ProductController::class, 'show'])
+    ->name('products.show')
+    ->middleware('auth');
 
-// Profile routes
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-Route::put('/profile/password', [ProfileController::class, ' update'])
-    ->name('partials.update-password')
-    ->middleware('auth');});
+Route::get('/edit-profile', [AuthController::class, 'showEditProfile'])
+    ->name('edit.profile')
+    ->middleware('auth');
+
+Route::patch('/edit-profile', [AuthController::class, 'updateProfile'])
+    ->middleware('auth');
+
+
+
+
+Route::put('/update-password', [ProfileController::class, 'updatePassword']);

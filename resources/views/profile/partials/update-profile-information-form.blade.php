@@ -1,60 +1,16 @@
-{{-- resources/views/profile/partials/update-profile-information-form.blade.php --}}
-{{-- Only Name & Email – Super Clean & Simple --}}
+<form method="POST" action="{{ route('profile.update') }}">
+    @csrf
+    @method('PATCH')
 
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            Edit Login Details
-        </h2>
-        <p class="mt-1 text-sm text-gray-600">
-            Update the name and email you use to log in.
-        </p>
-    </header>
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-control" name="name" value="{{ old('name', auth()->user()->name) }}" required>
+    </div>
 
-    <form method="POST" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
-        @csrf
-        @method('patch')
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" name="email" value="{{ old('email', auth()->user()->email) }}" required>
+    </div>
 
-        <!-- Name Field -->
-        <div>
-            <x-input-label for="name" value="Name" />
-            <x-text-input
-                id="name"
-                name="name"
-                type="text"
-                class="mt-1 block w-full"
-                value="{{ old('name', auth()->user()->name) }}"
-                required
-                autofocus
-            />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
-        </div>
-
-        <!-- Email Field -->
-        <div>
-            <x-input-label for="email" value="Email" />
-            <x-text-input
-                id="email"
-                name="email"
-                type="email"
-                class="mt-1 block w-full"
-                value="{{ old('email', auth()->user()->email) }}"
-                required
-            />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <!-- Save Button -->
-        <div class="flex items-center gap-4">
-            <x-primary-button>
-                Save Changes
-            </x-primary-button>
-
-            @if (session('status') === 'profile-updated')
-                <p class="text-sm text-green-600 font-medium">
-                    Saved successfully!
-                </p>
-            @endif
-        </div>
-    </form>
-</section>
+    <button class="btn btn-primary">Save</button>
+</form>

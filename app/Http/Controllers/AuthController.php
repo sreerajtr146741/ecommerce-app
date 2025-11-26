@@ -102,4 +102,29 @@ class AuthController extends Controller
             return redirect('/login')->with('error', 'Logout failed. Please try again.');
         }
     }
+    public function showEditProfile()
+{
+    return view('edit-profile');
+}
+
+public function updateProfile(Request $request)
+{
+    $user = auth()->user();
+
+    $request->validate([
+        'email' => 'required|email|unique:users,email,' . $user->id,
+        'password' => 'nullable|min:6|confirmed'
+    ]);
+
+    $user->email = $request->email;
+
+    if ($request->password) {
+        $user->password = bcrypt($request->password);
+    }
+
+    $user->save();
+
+    return back()->with('success', 'Profile updated successfully');
+}
+
 }

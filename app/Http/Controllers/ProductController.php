@@ -143,4 +143,15 @@ class ProductController extends Controller
             return back()->with('error', 'Failed to delete product.');
         }
     }
+
+
+public function show(Product $product)
+{
+    // Only allow owner to view
+    if ($product->user_id !== auth()->id()) {
+        abort(403);
+    }
+    
+    return view('products.index', compact('product'));
+}
 }
