@@ -6,23 +6,29 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
 use Exception;
 
 class AuthController extends Controller
 {
+    /* ===========================
+       SHOW REGISTER PAGE
+    ============================ */
     public function showRegister()
     {
         return view('auth.register');
     }
 
+    /* ===========================
+       HANDLE REGISTRATION + RETURN TOKEN
+    ============================ */
     public function register(Request $request)
     {
         try {
             $request->validate([
                 'name'     => 'required|string|max:255',
-                'email'    => 'required|email|unique:users,email|max:255',
-                'password' => 'required|string|min:6|confirmed',
+                'email'    => 'required|email|unique:users,email',
+                'password' => 'required|min:6|confirmed',
             ]);
 
             $user = User::create([
@@ -31,28 +37,41 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            Auth::login($user);
+            // CREATE TOKEN (for API or future use)
+            $token = $user->createToken('mystore-app-token')->plainTextToken;
 
-            return redirect()
-                ->route('products.index')
-                ->with('success', 'Welcome! Your account has been created successfully.');
+            // FOR WEB: Just redirect to login
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Registered successfully',
+                    'user'    => $user,
+                    'token'   => $token
+                ], 201);
+            }
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('login')
+                             ->with('success', 'Account created! Please login.')
+                             ->withCookie(cookie('api_token', $token, 60*24*30)); // optional
+
+        } catch (ValidationException $e) {
             return back()->withErrors($e->validator)->withInput();
         } catch (Exception $e) {
-            \Log::error('Registration failed: ' . $e->getMessage());
-
-            return back()
-                ->with('error', 'Something went wrong. Please try again later.')
-                ->withInput($request->only('name', 'email'));
+            \Log::error('Registration Error: ' . $e->getMessage());
+            return back()->with('error', 'Something went wrong');
         }
     }
 
+    /* ===========================
+       SHOW LOGIN PAGE
+    ============================ */
     public function showLogin()
     {
         return view('auth.login');
     }
 
+    /* ===========================
+       HANDLE LOGIN + RETURN TOKEN
+    ============================ */
     public function login(Request $request)
     {
         try {
@@ -61,70 +80,63 @@ class AuthController extends Controller
                 'password' => 'required|string',
             ]);
 
-            $remember = $request->filled('remember');
-
-            if (Auth::attempt($credentials, $remember)) {
+            if (Auth::attempt($credentials, $request->filled('remember'))) {
+                $user = Auth::user();
                 $request->session()->regenerate();
 
-                return redirect()
-                    ->intended(route('products.index'))
-                    ->with('success', 'Welcome back!');
+                // CREATE TOKEN FOR THIS LOGIN
+                $token = $user->createToken('mystore-app-token')->plainTextToken;
+
+                // FOR API RESPONSE
+                if ($request->wantsJson() || $request->is('api/*')) {
+                    return response()->json([
+                        'message' => 'Login successful',
+                        'user'    => $user,
+                        'token'   => $token
+                    ]);
+                }
+
+                return redirect()->route('products.index')
+                                 ->with('success', 'Welcome back, ' . $user->name . '!')
+                                 ->withCookie(cookie('api_token', $token, 60*24*30));
+
             }
 
-            return back()
-                ->withErrors(['email' => 'The provided credentials are incorrect.'])
-                ->onlyInput('email');
+            return back()->withErrors(['email' => 'Invalid credentials'])->onlyInput('email');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return back()->withErrors($e->validator)->withInput();
         } catch (Exception $e) {
-            \Log::error('Login failed: ' . $e->getMessage());
-
-            return back()
-                ->with('error', 'An error occurred. Please try again.')
-                ->withInput($request->only('email'));
+            \Log::error('Login Error: ' . $e->getMessage());
+            return back()->with('error', 'Login failed');
         }
     }
 
+    /* ===========================
+       LOGOUT + REVOKE ALL TOKENS
+    ============================ */
     public function logout(Request $request)
     {
         try {
-            Auth::guard('web')->logout();
+            $user = Auth::user();
 
+            if ($user) {
+                // Revoke all tokens (super secure)
+                $user->tokens()->delete();
+            }
+
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect('/login')->with('success', 'You have been logged out.');
+            // Clear token cookie
+            return redirect('/login')
+                           ->with('success', 'Logged out successfully!')
+                           ->withCookie(\Cookie::forget('api_token'));
 
         } catch (Exception $e) {
-            \Log::error('Logout failed: ' . $e->getMessage());
-
-            return redirect('/login')->with('error', 'Logout failed. Please try again.');
+            \Log::error('Logout Error: ' . $e->getMessage());
+            return redirect('/login');
         }
     }
-    public function showEditProfile()
-{
-    return view('edit-profile');
-}
-
-public function updateProfile(Request $request)
-{
-    $user = auth()->user();
-
-    $request->validate([
-        'email' => 'required|email|unique:users,email,' . $user->id,
-        'password' => 'nullable|min:6|confirmed'
-    ]);
-
-    $user->email = $request->email;
-
-    if ($request->password) {
-        $user->password = bcrypt($request->password);
-    }
-
-    $user->save();
-
-    return back()->with('success', 'Profile updated successfully');
-}
-
 }

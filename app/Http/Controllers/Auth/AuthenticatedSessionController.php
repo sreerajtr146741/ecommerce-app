@@ -28,8 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
-    }
+return redirect()->route('products.index')->with('success', 'Welcome back!');    }
 
     /**
      * Destroy an authenticated session.

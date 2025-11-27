@@ -66,6 +66,10 @@
             justify-content: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
+        .alert {
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 <body>
@@ -83,9 +87,20 @@
                 </div>
 
                 <div class="card-body p-5">
+
+                    <!-- SUCCESS MESSAGE -->
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <strong>Success!</strong> {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    <!-- ERROR MESSAGES -->
                     @if($errors->any())
-                        <div class="alert alert-danger">
-                            {{ $errors->first() }}
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <strong>Oops!</strong> {{ $errors->first() }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
 
@@ -101,12 +116,22 @@
                         <div class="mb-4">
                             <label class="form-label text-muted">Password</label>
                             <input type="password" name="password" class="form-control form-control-lg" 
-                                   required placeholder="Enter your password">
+                                   required autocomplete="current-password" placeholder="Enter your password">
+                        </div>
+
+                        <!-- REMEMBER ME + DEFAULT CHECKED + FORGOT PASSWORD REMOVED -->
+                        <div class="d-flex justify-content-start align-items-center mb-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="remember" id="remember" checked>
+                                <label class="form-check-label text-muted fw-500" for="remember">
+                                    Remember me <small class="text-success">(Stay logged in for 2 weeks)</small>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg btn-login text-white">
-                                LOGIN TO DASHBOARD
+                                LOGIN TO MYSTORE
                             </button>
                         </div>
                     </form>
@@ -130,5 +155,6 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
